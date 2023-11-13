@@ -6,9 +6,9 @@ function getOrganisationData() {
   const query = '"Apps Script" stars:">=100"';
   const url = 'https://sandbox.dissco.tech/api/v1/organisation/tuples' + '?sort=stars' + '&q=' + encodeURIComponent(query);
 
-  const response = UrlFetchApp.fetch(url, {'muteHttpExceptions': true});
+  const response = UrlFetchApp.fetch(url, { 'muteHttpExceptions': true });
   const data = JSON.parse(response.getContentText());
-  
+
   let check = [];
   let numberCheck = {};
   let returnArray = [];
@@ -60,7 +60,7 @@ function fillMonkeyForm(auth, survey_id, page = 1) {
   if (!page > 0) {
     page = 1;
   }
-    
+
   const organisationData = getOrganisationData();
 
   /* Find form data */
@@ -88,10 +88,10 @@ function fillMonkeyForm(auth, survey_id, page = 1) {
       "family": "matrix",
       "subtype": "menu",
       "answers": {
-        "rows":[{
+        "rows": [{
           "text": "Organisation:"
         }],
-        "cols":[{
+        "cols": [{
           "text": "Choose",
           "choices": choices
         }]
@@ -104,11 +104,11 @@ function fillMonkeyForm(auth, survey_id, page = 1) {
     }
 
     let options = {
-      'method' : 'post',
-      'headers':{'Authorization':'bearer ' + auth},
+      'method': 'post',
+      'headers': { 'Authorization': 'bearer ' + auth },
       'contentType': 'application/json',
       // Convert the JavaScript object to a JSON string.
-      'payload' : JSON.stringify(data),
+      'payload': JSON.stringify(data),
     };
 
     let response = UrlFetchApp.fetch('https://api.surveymonkey.com/v3/surveys/' + survey_id + '/pages/' + page_data.id + '/questions', options);
@@ -117,14 +117,14 @@ function fillMonkeyForm(auth, survey_id, page = 1) {
 
 function getMonkeyForms(auth) {
   let options = {
-      'method' : 'GET',
-      'headers':{'Authorization':'Bearer ' + auth},
-      'contentType': 'application/json'
-    };
+    'method': 'GET',
+    'headers': { 'Authorization': 'Bearer ' + auth },
+    'contentType': 'application/json'
+  };
 
   let response = UrlFetchApp.fetch('https://api.surveymonkey.com/v3/surveys', options);
   let data = JSON.parse(response.getContentText());
-  
+
   return data;
 }
 
@@ -132,8 +132,8 @@ function findMonkeyForm(auth, survey_id, callback) {
   let survey_data;
 
   let options = {
-    'method' : 'GET',
-    'headers':{'Authorization':'bearer ' + auth},
+    'method': 'GET',
+    'headers': { 'Authorization': 'bearer ' + auth },
     'contentType': 'application/json'
   };
   let result = UrlFetchApp.fetch('https://api.surveymonkey.net/v3/surveys/' + survey_id, options);
@@ -146,8 +146,8 @@ function findMonkeyForm(auth, survey_id, callback) {
 
 function findMonkeyPage(auth, survey_id, page = 1, callback) {
   let options = {
-    'method' : 'get',
-    'headers':{'Authorization':'bearer ' + auth},
+    'method': 'get',
+    'headers': { 'Authorization': 'bearer ' + auth },
     'contentType': 'application/json'
   };
 
@@ -205,10 +205,10 @@ function exportGoogleForm(form_id) {
     for (var j = 0; j < itemResponses.length; j++) {
       /* Set questions and answers */
       var itemResponse = itemResponses[j];
-    
+
       if (itemResponse.getItem().getTitle() == 'Choose a DiSSCo Organisation:') {
         let ror = organisationsData[itemResponse.getResponse()]['ror'];
-        
+
         if (!responses['response: ' + i]['organisation_id']) {
           responses['response: ' + i]['organisation_id'] = ror;
         }
@@ -224,7 +224,7 @@ function exportGoogleForm(form_id) {
       responses['response: ' + i]['form_id'] = form_id;
       responses['response: ' + i]['form_type'] = formType;
       responses['response: ' + i]['form_title'] = formTitle;
-    }    
+    }
 
     if (!responses['response: ' + i]['organisation_id']) {
       delete responses['response: ' + i];
@@ -236,13 +236,13 @@ function exportGoogleForm(form_id) {
 
   function process(check) {
     return check;
-  } 
+  }
 }
 
 function exportMonkeyForm(survey_id, auth, survey_title) {
   let options = {
-    'method' : 'GET',
-    'headers':{'Authorization':'bearer ' + auth},
+    'method': 'GET',
+    'headers': { 'Authorization': 'bearer ' + auth },
     'contentType': 'application/json'
   };
   let result = UrlFetchApp.fetch('https://api.surveymonkey.net/v3/surveys/' + survey_id + '/responses/bulk?simple=true', options);
@@ -259,7 +259,7 @@ function exportMonkeyForm(survey_id, auth, survey_title) {
       responses['response: ' + i] = {
         'questions': {}
       };
-      
+
       let responseIndicator = 'response: ' + i;
       let respondent = data[key];
 
@@ -279,9 +279,33 @@ function exportMonkeyForm(survey_id, auth, survey_title) {
             }
           } else {
             if (!responses[responseIndicator]['questions'][question['heading']]) {
-              responses[responseIndicator]['questions'][question['heading']] = [question['answers'][0]['simple_text']];
+              let answersList;
+
+              if (question['answers'].length > 1) {
+                answersList = [];
+
+                question['answers'].forEach((answer) => {
+                  answersList.push(answer['simple_text']);
+                });
+              } else {
+                answersList = question['answers'][0]['simple_text'];
+              }
+
+              responses[responseIndicator]['questions'][question['heading']] = [answersList];
             } else {
-              responses[responseIndicator]['questions'][question['heading']].push(question['answers'][0]['simple_text']);
+              let answersList;
+
+              if (question['answers'].length > 1) {
+                answersList = [];
+
+                question['answers'].forEach((answer) => {
+                  answersList.push(answer['simple_text']);
+                });
+              } else {
+                answersList = question['answers'][0]['simple_text'];
+              }
+
+              responses[responseIndicator]['questions'][question['heading']].push(answersList);
             }
           }
         }
@@ -309,12 +333,12 @@ function exportMonkeyForm(survey_id, auth, survey_title) {
 
 function readMonkeyForm(auth, survey_id) {
   let options = {
-      'method' : 'post',
-      'headers':{'Authorization':'bearer ' + auth},
-      'contentType': 'application/json',
-      // Convert the JavaScript object to a JSON string.
-      'payload' : JSON.stringify(data),
-    };
+    'method': 'post',
+    'headers': { 'Authorization': 'bearer ' + auth },
+    'contentType': 'application/json',
+    // Convert the JavaScript object to a JSON string.
+    'payload': JSON.stringify(data),
+  };
 
   let response = UrlFetchApp.fetch('https://api.surveymonkey.com/v3/surveys/' + survey_id + '/responses');
 }
